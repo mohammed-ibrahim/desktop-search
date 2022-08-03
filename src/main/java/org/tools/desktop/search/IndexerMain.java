@@ -15,7 +15,7 @@ import java.util.List;
 
 public class IndexerMain {
 
-  private static final String DROP_LOCATION = "index.drop.location";
+  public static final String DROP_LOCATION = "index.drop.location";
   private static final String BOOKMARKS_HTML_FILE = "bookmark.html.file";
   public static void main(String[] args) throws Exception {
     /*
