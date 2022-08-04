@@ -3,25 +3,65 @@ package org.tools.desktop.generic;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.util.Base64;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class JwtPrinter {
 
+
+  private static final String EMPTY_CLIPBOARD = "nothing.in.clipboard";
+  private static String INVALID_JWT = "invalid.jwt";
+  private static final AtomicReference<String> jwtRef = new AtomicReference<>();
+
+  private static final String SUCCESS_TEMPLATE = "\n---------------------------------------------------------\n" +
+      "Jwt: %s\n" +
+      "\n" +
+      "%s\n" +
+      "---------------------------------------------------------\n";
+
+  private static final String FAILED_TEMPLATE = "---------------------------------------------------------\n" +
+      "Failed\n" +
+      "\n" +
+      "%s\n" +
+      "\n" +
+      "---------------------------------------------------------";
+
+  private static final String FAILED_WITH_JWT_TEMPLATE = "---------------------------------------------------------\n" +
+      "Failed\n" +
+      "\n" +
+      "Jwt\n" +
+      "%s\n" +
+      "\n" +
+      "Reason\n" +
+      "%s\n" +
+      "\n" +
+      "---------------------------------------------------------";
+
   public static void main(String[] args) {
     try {
-      printJwt(args);
+      Pair<String, String> jwtJson = getJwtJson(args);
+      System.out.println(String.format(SUCCESS_TEMPLATE, jwtJson.getLeft(), jwtJson.getRight()));
     } catch (Exception e) {
-      System.out.println("The was an ERROR: " + e.getMessage());
+
+      String jwt = jwtRef.get();
+      if (StringUtils.isNotBlank(jwt)) {
+        System.out.println(String.format(FAILED_WITH_JWT_TEMPLATE, jwt, e.getMessage()));
+      } else {
+        System.out.println(String.format(FAILED_TEMPLATE, e.getMessage()));
+      }
     }
   }
 
-  private static void printJwt(String[] args) throws Exception {
-    String jwt = args.length == 0 ? loadJwtFromClipboard() : args[0];
+  private static Pair<String, String> getJwtJson(String[] args) throws Exception {
+    String jwt = args.length == 0
+        ? loadJwtFromClipboard()
+        : args[0];
 
-    System.out.println("\n\nFound jwt: " + jwt + "\n\n");
+    jwtRef.set(jwt);
     String payload = getPayload(jwt);
     ObjectMapper objectMapper = new ObjectMapper();
     JsonNode jsonNode = objectMapper.readTree(payload);
@@ -30,7 +70,7 @@ public class JwtPrinter {
         .writerWithDefaultPrettyPrinter()
         .writeValueAsString(jsonNode);
 
-    System.out.println(json);
+    return Pair.of(jwt, json);
   }
 
   private static String loadJwtFromClipboard() throws Exception {
@@ -38,7 +78,7 @@ public class JwtPrinter {
         .getSystemClipboard().getData(DataFlavor.stringFlavor);
 
     if (StringUtils.isBlank(jwt)) {
-      throw new RuntimeException("Nothing in clipboard as well!");
+      throw new RuntimeException(EMPTY_CLIPBOARD);
     }
 
     return jwt;
@@ -48,7 +88,7 @@ public class JwtPrinter {
     String[] parts = jwt.split("\\.");
 
     if (parts.length < 2) {
-      throw new RuntimeException("Jwt is Invalid");
+      throw new RuntimeException(INVALID_JWT);
     }
 
     byte[] decoded = Base64.getDecoder().decode(parts[1]);
