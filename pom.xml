@@ -6,7 +6,11 @@
 
   <groupId>org.tools.desktop.search</groupId>
   <artifactId>desktop-search</artifactId>
+  <packaging>pom</packaging>
   <version>1.0-SNAPSHOT</version>
+  <modules>
+    <module>generic-tools</module>
+  </modules>
 
   <properties>
     <lucene.version>5.5.3</lucene.version>
