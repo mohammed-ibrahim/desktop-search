@@ -55,8 +55,7 @@ public class BookmarkSearch {
         Tokenizer.addTokens(token, term));
 
     List<String> results = search(indexDropLocation, token);
-
-    results.forEach(s -> System.out.println("Link: " + s));
+    SearchResultsProcessor.processBookMarkSearch(results);
   }
 
   public static List<String> search(String indexDropLocation, List<String> terms) throws Exception {
