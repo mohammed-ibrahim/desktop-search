@@ -10,22 +10,38 @@ import java.util.Base64;
 
 public class JwtPrinter {
 
-  public static void main(String[] args) throws Exception {
-    String jwt = (String) Toolkit.getDefaultToolkit()
-        .getSystemClipboard().getData(DataFlavor.stringFlavor);
-
-    if (StringUtils.isBlank(jwt)) {
-      System.out.println("Nothing in clipboard");
-      return;
+  public static void main(String[] args) {
+    try {
+      printJwt(args);
+    } catch (Exception e) {
+      System.out.println("The was an ERROR: " + e.getMessage());
     }
+  }
 
-    System.out.println("\n\nCopied jwt: " + jwt + "\n\n");
+  private static void printJwt(String[] args) throws Exception {
+    String jwt = args.length == 0 ? loadJwtFromClipboard() : args[0];
+
+    System.out.println("\n\nFound jwt: " + jwt + "\n\n");
     String payload = getPayload(jwt);
     ObjectMapper objectMapper = new ObjectMapper();
     JsonNode jsonNode = objectMapper.readTree(payload);
 
-    String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
+    String json = objectMapper
+        .writerWithDefaultPrettyPrinter()
+        .writeValueAsString(jsonNode);
+
     System.out.println(json);
+  }
+
+  private static String loadJwtFromClipboard() throws Exception {
+    String jwt = (String) Toolkit.getDefaultToolkit()
+        .getSystemClipboard().getData(DataFlavor.stringFlavor);
+
+    if (StringUtils.isBlank(jwt)) {
+      throw new RuntimeException("Nothing in clipboard as well!");
+    }
+
+    return jwt;
   }
 
   private static String getPayload(String jwt) {
