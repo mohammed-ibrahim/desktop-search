@@ -2,6 +2,7 @@ package org.tools.desktop.search.search;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
@@ -15,10 +16,12 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.CollectionUtil;
 import org.tools.desktop.search.Fields;
+import org.tools.desktop.search.Tokenizer.Tokenizer;
 import org.tools.desktop.search.Validator;
 import org.tools.desktop.search.document.CommonTermsCleaner;
 
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,7 +36,7 @@ public class BookmarkSearch {
 
     String[] arg0 = {"ss", "pre"};
 
-    String[] args = arg0;
+    String[] args = args1;
     if (arg0 == null || arg0.length < 1) {
       throw new RuntimeException("No terms to search");
     }
@@ -47,10 +50,16 @@ public class BookmarkSearch {
       throw new RuntimeException("No terms to search");
     }
 
-    search(indexDropLocation, terms);
+    List<String> token = new ArrayList<>();
+    terms.forEach(term ->
+        Tokenizer.addTokens(token, term));
+
+    List<String> results = search(indexDropLocation, token);
+
+    results.forEach(s -> System.out.println("Link: " + s));
   }
 
-  public static void search(String indexDropLocation, List<String> terms) throws Exception {
+  public static List<String> search(String indexDropLocation, List<String> terms) throws Exception {
     try (IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(indexDropLocation)))) {
       TermQuery documentTypeQuery = new TermQuery(new Term(Fields.DOCUMENT_TYPE, Fields.DOCUMENT_TYPE_BOOKMARK));
       BooleanQuery.Builder builder = new BooleanQuery.Builder();
@@ -65,9 +74,15 @@ public class BookmarkSearch {
       TopDocs topDocs = searcher.search(builder.build(), 10);
 
       System.out.println("Total: " + topDocs.totalHits + " for: " + builder.build().toString());
+
+      List<String> results = new ArrayList<>();
       for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
-        System.out.println(reader.document(scoreDoc.doc));
+        Document document = reader.document(scoreDoc.doc);
+        String link = document.getField(Fields.FIELD_LINK).stringValue();
+        results.add(link);
       }
+
+      return results;
     }
   }
 

@@ -9,6 +9,7 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.util.CollectionUtil;
 import org.tools.desktop.search.Fields;
+import org.tools.desktop.search.Tokenizer.Tokenizer;
 import org.tools.desktop.search.bookmark.BookMark;
 
 import java.util.ArrayList;
@@ -47,11 +48,11 @@ public class DocumentBuilder {
   private static List<String> getTags(BookMark bookMark) {
     List<String> tags = new ArrayList<>();
 
-    addTokens(tags, bookMark.getTitle());
+    Tokenizer.addTokens(tags, bookMark.getTitle());
 
     try {
       URIBuilder uriBuilder = new URIBuilder(bookMark.getLink());
-      addTokens(tags, uriBuilder.getHost());
+      Tokenizer.addTokens(tags, uriBuilder.getHost());
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -59,21 +60,5 @@ public class DocumentBuilder {
     return new ArrayList<>(new HashSet<>(CommonTermsCleaner.cleanCommonTerms(tags)));
   }
 
-  private static void addTokens(List<String> existingTokens, String input) {
-    List<String> freshTokens = tokenize(input);
-    if (CollectionUtils.isNotEmpty(freshTokens)) {
-      existingTokens.addAll(freshTokens);
-    }
-  }
 
-  private static List<String> tokenize(String input) {
-    if (StringUtils.isBlank(input)) {
-      return Collections.emptyList();
-    }
-
-    String result = input.replaceAll("[^a-zA-Z0-9]+", SINGLE_SPACE);
-    result = StringUtils.trim(result).replaceAll(" +", SINGLE_SPACE);
-    return Arrays.stream(result.split(SINGLE_SPACE))
-        .collect(Collectors.toList());
-  }
 }
