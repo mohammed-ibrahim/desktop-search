@@ -7,6 +7,8 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -62,7 +64,7 @@ public class JwtPrinter {
         : args[0];
 
     jwtRef.set(jwt);
-    String payload = getPayload(jwt);
+    String payload = getPayload(URLDecoder.decode(jwt, StandardCharsets.UTF_8.name()));
     ObjectMapper objectMapper = new ObjectMapper();
     JsonNode jsonNode = objectMapper.readTree(payload);
 
