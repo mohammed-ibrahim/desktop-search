@@ -1,5 +1,7 @@
 package org.tools.desktop.generic.grep;
 
+import org.tools.desktop.generic.grep.model.FileLookupFilter;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -10,9 +12,7 @@ public class FilesCollector {
 
   public static List<Path> getFiles(
       String srcDir,
-      List<String> fileNameMustContain,
-      List<String> fileExtension,
-      List<String> filePathMustNotContain) {
+      FileLookupFilter fileLookupFilter) {
 
     try {
 
@@ -23,10 +23,7 @@ public class FilesCollector {
       List<Path> filteredFiles = files.stream()
           .filter(file ->
               Matcher.matchesFile(file.toString(),
-                  file.getFileName().toString(),
-                  fileNameMustContain,
-                  fileExtension,
-                  filePathMustNotContain))
+                  file.getFileName().toString(), fileLookupFilter))
           .collect(Collectors.toList());
 
       return filteredFiles;

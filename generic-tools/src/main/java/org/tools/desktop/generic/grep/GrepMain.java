@@ -2,14 +2,21 @@ package org.tools.desktop.generic.grep;
 
 import org.apache.commons.lang3.StringUtils;
 import org.tools.desktop.generic.AppLog;
+import org.tools.desktop.generic.grep.model.FileLookupFilter;
 
+import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class GrepMain {
 
   private static String SRC_DIR = "-srcDir";
+  private static String OUTPUT_DIR = "-outputDir";
+  private static String OUTPUT_FILE = "-outputFile";
   private static String FILE_EXTENSION = "-fileExtension";
   private static String FILENAME_MUST_CONTAIN = "-fileNameMustContain";
   private static String EXCLUDE_IN_PATH = "-filePathMustNotContain";
@@ -28,6 +35,21 @@ public class GrepMain {
 
     List<String> args = Arrays.asList(argzs);
     String srcDir = getSingleParam(args, SRC_DIR, PARAM_REQUIRED);
+    String outputDir = getSingleParam(args, OUTPUT_DIR, PARAM_OPTIONAL);
+    String outputFile = getSingleParam(args, OUTPUT_FILE, PARAM_OPTIONAL);
+
+    if (outputDir == null && outputFile == null) {
+      AppLog.print("outputDir or outputFile must be specified.");
+      System.exit(1);
+    }
+
+    String resultantFile = null;
+    if (outputDir != null) {
+      resultantFile = generateFileNameIfSrcDirProvided(outputDir);
+    } else if (outputFile != null) {
+      resultantFile = getTimeStampedFileName(outputFile);
+    }
+
     List<String> fileExtension = getMultiParam(args, FILE_EXTENSION, PARAM_OPTIONAL);
 
     List<String> fileNameMustContain = getMultiParam(args, FILENAME_MUST_CONTAIN, PARAM_OPTIONAL);
@@ -36,11 +58,10 @@ public class GrepMain {
     List<String> lineMustContain = getMultiParam(args, LINE_MUST_CONTAIN, PARAM_REQUIRED);
     List<String> lineMustNotContain = getMultiParam(args, LINE_MUST_NOT_CONTAIN, PARAM_OPTIONAL);
 
-    FilesCollector.getFiles(
-        srcDir,
-        fileNameMustContain,
-        fileExtension,
-        filePathMustNotContain);
+    FileLookupFilter fileLookupFilter = new FileLookupFilter(
+        fileExtension, fileNameMustContain, filePathMustNotContain);
+
+    FilesCollector.getFiles(srcDir, fileLookupFilter);
     /**
      * Step 1 :: collect files
      * Step 2 :: search files
@@ -48,6 +69,21 @@ public class GrepMain {
      * Step 4 #1 snd #3 should happen in sync
      */
 
+  }
+
+  private static String generateFileNameIfSrcDirProvided(String outputDir) {
+    String fileName = String.format("results-%s.log", generateTimeStampForFileName());
+    return Paths.get(outputDir, fileName).toString();
+  }
+
+  private static String getTimeStampedFileName(String fullPath) {
+    return String.format("%s-%s.log", fullPath, generateTimeStampForFileName());
+  }
+
+  private static String generateTimeStampForFileName() {
+    Date date = new Date();
+    DateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy-HH-mm-ss");
+    return dateFormat.format(date);
   }
 
   private static String getSingleParam(List<String> args,

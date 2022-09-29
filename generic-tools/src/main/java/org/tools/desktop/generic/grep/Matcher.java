@@ -1,6 +1,7 @@
 package org.tools.desktop.generic.grep;
 
 import org.apache.commons.lang3.StringUtils;
+import org.tools.desktop.generic.grep.model.FileLookupFilter;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -10,28 +11,28 @@ public class Matcher {
 
   public static void main(String[] args) {
     // all fields applied and should match
-    check(matchesFile("/a/b/c/d.txt",
+    check(testMatchesFile("/a/b/c/d.txt",
         "d.txt",
         Arrays.asList("d", "d.t"),
         Arrays.asList(".txt"),
         Arrays.asList("gcw")), true, "case1");
 
     // only matching clause
-    check(matchesFile("/a/b/c/d.txt",
+    check(testMatchesFile("/a/b/c/d.txt",
         "d.txt",
         Arrays.asList("d", "d.t"),
         Collections.emptyList(),
         Collections.emptyList()), true, "case2");
 
     // only extension clause
-    check(matchesFile("/a/b/c/d.txt",
+    check(testMatchesFile("/a/b/c/d.txt",
         "d.txt",
         Collections.emptyList(),
         Arrays.asList(".txt", "txt", "xt"),
         Collections.emptyList()), true, "case3");
 
     // only exclusion clause
-    check(matchesFile("/a/b/c/d.txt",
+    check(testMatchesFile("/a/b/c/d.txt",
         "d.txt",
         Collections.emptyList(),
         Collections.emptyList(),
@@ -46,26 +47,35 @@ public class Matcher {
     }
   }
 
-  public static boolean matchesFile(
+  private static boolean testMatchesFile(
       String fullPath,
       String fileName,
       List<String> fileNameMustContain,
       List<String> fileExtension,
       List<String> filePathMustNotContain) {
 
-    for (String mustMatchTerm : fileNameMustContain) {
+    FileLookupFilter fileLookupFilter = new FileLookupFilter(fileExtension, fileNameMustContain, filePathMustNotContain);
+    return matchesFile(fullPath, fileName, fileLookupFilter);
+  }
+
+  public static boolean matchesFile(
+      String fullPath,
+      String fileName,
+      FileLookupFilter fileLookupFilter) {
+
+    for (String mustMatchTerm : fileLookupFilter.getFileNameMustContain()) {
       if (!StringUtils.containsIgnoreCase(fileName, mustMatchTerm)) {
         return false;
       }
     }
 
-    for (String mustEndWithTerm : fileExtension) {
+    for (String mustEndWithTerm : fileLookupFilter.getFileExtension()) {
       if (!StringUtils.endsWithIgnoreCase(fileName, mustEndWithTerm)) {
         return false;
       }
     }
 
-    for (String mustNotMatchTerm : filePathMustNotContain) {
+    for (String mustNotMatchTerm : fileLookupFilter.getFilePathMustNotContain()) {
       if (StringUtils.containsIgnoreCase(fullPath, mustNotMatchTerm)) {
         return false;
       }
