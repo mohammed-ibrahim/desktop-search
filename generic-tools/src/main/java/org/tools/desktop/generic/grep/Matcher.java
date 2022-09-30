@@ -2,6 +2,7 @@ package org.tools.desktop.generic.grep;
 
 import org.apache.commons.lang3.StringUtils;
 import org.tools.desktop.generic.grep.model.FileLookupFilter;
+import org.tools.desktop.generic.grep.model.LineLookupFilter;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,6 +57,22 @@ public class Matcher {
 
     FileLookupFilter fileLookupFilter = new FileLookupFilter(fileExtension, fileNameMustContain, filePathMustNotContain);
     return matchesFile(fullPath, fileName, fileLookupFilter);
+  }
+
+  public static boolean matchesLine(String line, LineLookupFilter lineLookupFilter) {
+    for (String mustMatchTerm : lineLookupFilter.getLineMustContain()) {
+      if (!StringUtils.containsIgnoreCase(line, mustMatchTerm)) {
+        return false;
+      }
+    }
+
+    for (String mustNotMatchTerm : lineLookupFilter.getLineMustNotContain()) {
+      if (StringUtils.containsIgnoreCase(line, mustNotMatchTerm)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   public static boolean matchesFile(

@@ -3,7 +3,15 @@ package org.tools.desktop.generic.grep;
 import org.apache.commons.lang3.StringUtils;
 import org.tools.desktop.generic.AppLog;
 import org.tools.desktop.generic.grep.model.FileLookupFilter;
+import org.tools.desktop.generic.grep.model.LineLookupFilter;
+import org.tools.desktop.generic.grep.stream.FileStreamer;
+import org.tools.desktop.generic.grep.stream.LargeFileStreamer;
+import org.tools.desktop.generic.grep.stream.SmallFileStreamer;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -14,6 +22,9 @@ import java.util.stream.Collectors;
 
 public class GrepMain {
 
+  public static String NEW_LINE_CHAR = "\n";
+
+  private static final long MAX_FILE_SIZE_IN_MB_THRESHOLD = 30l;
   private static String SRC_DIR = "-srcDir";
   private static String OUTPUT_DIR = "-outputDir";
   private static String OUTPUT_FILE = "-outputFile";
@@ -57,18 +68,47 @@ public class GrepMain {
 
     List<String> lineMustContain = getMultiParam(args, LINE_MUST_CONTAIN, PARAM_REQUIRED);
     List<String> lineMustNotContain = getMultiParam(args, LINE_MUST_NOT_CONTAIN, PARAM_OPTIONAL);
+    LineLookupFilter lineLookupFilter = new LineLookupFilter(lineMustContain, lineMustNotContain);
 
     FileLookupFilter fileLookupFilter = new FileLookupFilter(
         fileExtension, fileNameMustContain, filePathMustNotContain);
 
-    FilesCollector.getFiles(srcDir, fileLookupFilter);
-    /**
-     * Step 1 :: collect files
-     * Step 2 :: search files
-     * Step 3 :: dump results
-     * Step 4 #1 snd #3 should happen in sync
-     */
+    List<Path> files = FilesCollector.getFiles(srcDir, fileLookupFilter);
+    AppLog.print("Number of files found: " + files.size());
 
+    try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(resultantFile))) {
+      for (Path file : files) {
+        processFile(file, bufferedWriter, lineLookupFilter);
+      }
+    } catch (Exception e) {
+      AppLog.print("Error occurred: " + e.getMessage());
+      e.printStackTrace();
+    }
+
+  }
+
+  private static final long  MEGABYTE = 1024L * 1024L;
+
+  public static long bytesToMeg(long bytes) {
+    return bytes / MEGABYTE ;
+  }
+
+  private static void processFile(Path file, BufferedWriter bufferedWriter, LineLookupFilter lineLookupFilter) {
+    try {
+      long numBytes = Files.size(file);
+      long mb = bytesToMeg(numBytes);
+
+      FileStreamer fileStreamer = null;
+      if (mb >= MAX_FILE_SIZE_IN_MB_THRESHOLD) {
+        fileStreamer = new LargeFileStreamer();
+      } else {
+        fileStreamer = new SmallFileStreamer();
+      }
+
+      fileStreamer.processFile(file, bufferedWriter, lineLookupFilter);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private static String generateFileNameIfSrcDirProvided(String outputDir) {
