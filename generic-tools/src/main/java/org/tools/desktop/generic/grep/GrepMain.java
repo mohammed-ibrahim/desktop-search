@@ -77,14 +77,17 @@ public class GrepMain {
     AppLog.print("Number of files found: " + files.size());
 
     try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(resultantFile))) {
-      for (Path file : files) {
-        processFile(file, bufferedWriter, lineLookupFilter);
+      for (int i=0; i<files.size(); i++) {//  Path file : files) {
+        Path path = files.get(i);
+        processFile(path, bufferedWriter, lineLookupFilter);
+        AppLog.print(String.format("%d/%d %s Completed", i+1, files.size(), path.toString()));
       }
     } catch (Exception e) {
       AppLog.print("Error occurred: " + e.getMessage());
       e.printStackTrace();
     }
 
+    AppLog.print("Results written to file: " + resultantFile);
   }
 
   private static final long  MEGABYTE = 1024L * 1024L;
