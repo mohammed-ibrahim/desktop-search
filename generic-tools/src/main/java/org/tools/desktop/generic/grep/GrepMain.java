@@ -38,6 +38,8 @@ public class GrepMain {
   private static boolean PARAM_REQUIRED = true;
   private static boolean PARAM_OPTIONAL = false;
 
+  private static boolean ADD_TIMESTAMP_TO_FILENAME = true;
+
   public static void main(String[] argzs) {
     if (argzs == null || argzs.length == 0) {
       AppLog.print("Need to supply params");
@@ -49,6 +51,32 @@ public class GrepMain {
     String outputDir = getSingleParam(args, OUTPUT_DIR, PARAM_OPTIONAL);
     String outputFile = getSingleParam(args, OUTPUT_FILE, PARAM_OPTIONAL);
 
+    List<String> fileExtension = getMultiParam(args, FILE_EXTENSION, PARAM_OPTIONAL);
+
+    List<String> fileNameMustContain = getMultiParam(args, FILENAME_MUST_CONTAIN, PARAM_OPTIONAL);
+    List<String> filePathMustNotContain = getMultiParam(args, EXCLUDE_IN_PATH, PARAM_OPTIONAL);
+
+    List<String> lineMustContain = getMultiParam(args, LINE_MUST_CONTAIN, PARAM_REQUIRED);
+    List<String> lineMustNotContain = getMultiParam(args, LINE_MUST_NOT_CONTAIN, PARAM_OPTIONAL);
+
+
+    startProcessing(
+        srcDir, outputDir, outputFile,
+        fileExtension, fileNameMustContain, filePathMustNotContain,
+        lineMustContain, lineMustNotContain, ADD_TIMESTAMP_TO_FILENAME);
+  }
+
+  public static void startProcessing(
+      String srcDir,
+      String outputDir,
+      String outputFile,
+      List<String> fileExtension,
+      List<String> fileNameMustContain,
+      List<String> filePathMustNotContain,
+      List<String> lineMustContain,
+      List<String> lineMustNotContain,
+      boolean addTimestampToResultantFileName) {
+
     if (outputDir == null && outputFile == null) {
       AppLog.print("outputDir or outputFile must be specified.");
       System.exit(1);
@@ -58,16 +86,14 @@ public class GrepMain {
     if (outputDir != null) {
       resultantFile = generateFileNameIfSrcDirProvided(outputDir);
     } else if (outputFile != null) {
-      resultantFile = getTimeStampedFileName(outputFile);
+      if (addTimestampToResultantFileName) {
+        resultantFile = getTimeStampedFileName(outputFile);
+      } else {
+        resultantFile = outputFile;
+      }
     }
 
-    List<String> fileExtension = getMultiParam(args, FILE_EXTENSION, PARAM_OPTIONAL);
 
-    List<String> fileNameMustContain = getMultiParam(args, FILENAME_MUST_CONTAIN, PARAM_OPTIONAL);
-    List<String> filePathMustNotContain = getMultiParam(args, EXCLUDE_IN_PATH, PARAM_OPTIONAL);
-
-    List<String> lineMustContain = getMultiParam(args, LINE_MUST_CONTAIN, PARAM_REQUIRED);
-    List<String> lineMustNotContain = getMultiParam(args, LINE_MUST_NOT_CONTAIN, PARAM_OPTIONAL);
     LineLookupFilter lineLookupFilter = new LineLookupFilter(lineMustContain, lineMustNotContain);
 
     FileLookupFilter fileLookupFilter = new FileLookupFilter(
