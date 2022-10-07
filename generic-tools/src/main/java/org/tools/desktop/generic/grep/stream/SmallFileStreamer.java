@@ -23,7 +23,8 @@ public class SmallFileStreamer implements FileStreamer {
 
       for (String line : list) {
         if (Matcher.matchesLine(line, lineLookupFilter)) {
-          bufferedWriter.write(line + NEW_LINE_CHAR);
+          bufferedWriter.write(line);
+          bufferedWriter.newLine();
         }
       }
     } catch (Exception e) {
